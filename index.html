@@ -125,41 +125,21 @@
       startGame();
     });
 
-    speedUpgrade.addEventListener('click', () => {
-      if (points >= 10) {
-        points -= 10;
-        pointsDisplay.textContent = points;
-        clearInterval(interval);
-        interval = setInterval(moveSnake, Math.max(50, interval - 50));
-        alert('Speed upgraded!');
-        closeShopMenu();
-      } else {
-        alert('Not enough points!');
-      }
-    });
-
-    frenzyUpgrade.addEventListener('click', () => {
-      if (points >= 15 && !frenzyActive) {
-        points -= 15;
-        pointsDisplay.textContent = points;
-        frenzyActive = true;
-        frenzyTimeout = setTimeout(() => {
-          frenzyActive = false;
-          alert('Frenzy Mode Ended!');
-        }, 30000);
-        generateFrenzyFood();
-        alert('Frenzy Mode Activated!');
-        closeShopMenu();
-      } else {
-        alert('Not enough points or Frenzy Mode already active!');
-      }
-    });
-
-    closeShop.addEventListener('click', closeShopMenu);
-    closeLeaderboard.addEventListener('click', closeLeaderboardMenu);
-
-    function generateFood() {
-      return [Math.floor(Math.random() * gridSize), Math.floor(Math.random() * gridSize)];
+    function startGame() {
+      createGrid();
+      updateGrid();
+      clearInterval(interval);
+      interval = setInterval(moveSnake, 200);
+      score = 0;
+      points = 0;
+      snake = [[10, 10]];
+      direction = 'RIGHT';
+      food = [generateFood()];
+      paused = false;
+      frenzyActive = false;
+      frenzyTimeout = null;
+      scoreDisplay.textContent = `Score: ${score}`;
+      pointsDisplay.textContent = points;
     }
 
     function createGrid() {
@@ -171,11 +151,8 @@
       }
     }
 
-    function generateFrenzyFood() {
-      food = [];
-      for (let i = 0; i < 5; i++) {
-        food.push(generateFood());
-      }
+    function generateFood() {
+      return [Math.floor(Math.random() * gridSize), Math.floor(Math.random() * gridSize)];
     }
 
     function updateGrid() {
@@ -190,7 +167,59 @@
         cells[index].classList.add('food');
       });
     }
-    ...
+
+    function moveSnake() {
+      if (paused) return;
+
+      const head = [...snake[snake.length - 1]];
+      if (direction === 'UP') head[0]--;
+      if (direction === 'DOWN') head[0]++;
+      if (direction === 'LEFT') head[1]--;
+      if (direction === 'RIGHT') head[1]++;
+
+      if (
+        head[0] < 0 ||
+        head[1] < 0 ||
+        head[0] >= gridSize ||
+        head[1] >= gridSize ||
+        snake.some(([x, y]) => x === head[0] && y === head[1])
+      ) {
+        alert(`Game Over! Your score: ${score}`);
+        updateLeaderboard(score);
+        resetGame();
+        return;
+      }
+
+      snake.push(head);
+      if (food.some(([fx, fy]) => fx === head[0] && fy === head[1])) {
+        score++;
+        points++;
+        food = [generateFood()];
+        if (score % 5 === 0) upgradeHint.style.display = 'block';
+      } else {
+        snake.shift();
+      }
+
+      scoreDisplay.textContent = `Score: ${score}`;
+      pointsDisplay.textContent = points;
+      updateGrid();
+    }
+
+    function updateLeaderboard(newScore) {
+      topScores.push(newScore);
+      topScores.sort((a, b) => b - a);
+      leaderboardList.innerHTML = topScores
+        .slice(0, 5)
+        .map(score => `<li>${score}</li>`)
+        .join('');
+      leaderboardMenu.style.display = 'block';
+    }
+
+    function resetGame() {
+      clearInterval(interval);
+      home.style.display = 'block';
+      game.style.display = 'none';
+    }
   </script>
 </body>
 </html>
