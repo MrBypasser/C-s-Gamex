@@ -45,6 +45,22 @@
       cursor: pointer;
       border-radius: 5px;
     }
+    .upgrade-container {
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: #333;
+      padding: 20px;
+      border-radius: 8px;
+      display: none;
+    }
+    .upgrade-container h3 {
+      margin: 0 0 10px;
+    }
+    .upgrade-container button {
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -56,7 +72,14 @@
   <div id="game" style="display: none;">
     <h2>Snake Game</h2>
     <p id="score">Score: 0</p>
+    <p id="upgradeHint" style="color: yellow; display: none;">Press E to open upgrades!</p>
     <div class="grid" id="grid"></div>
+  </div>
+  <div class="upgrade-container" id="upgradeMenu">
+    <h3>Choose an Upgrade:</h3>
+    <button id="speedUpgrade">Increase Speed</button>
+    <button id="scoreBoostUpgrade">Double Score on Next Food</button>
+    <button id="closeUpgrade">Close</button>
   </div>
   <script>
     const gridSize = 20;
@@ -65,18 +88,44 @@
     let food = [Math.floor(Math.random() * gridSize), Math.floor(Math.random() * gridSize)];
     let score = 0;
     let interval;
+    let upgradeHintShown = false;
+    let speed = 200;
+    let doubleScoreNext = false;
 
     const grid = document.getElementById('grid');
     const scoreDisplay = document.getElementById('score');
     const home = document.getElementById('home');
     const game = document.getElementById('game');
     const startButton = document.getElementById('startButton');
+    const upgradeHint = document.getElementById('upgradeHint');
+    const upgradeMenu = document.getElementById('upgradeMenu');
+    const speedUpgrade = document.getElementById('speedUpgrade');
+    const scoreBoostUpgrade = document.getElementById('scoreBoostUpgrade');
+    const closeUpgrade = document.getElementById('closeUpgrade');
 
     startButton.addEventListener('click', () => {
       home.style.display = 'none';
       game.style.display = 'block';
       startGame();
     });
+
+    speedUpgrade.addEventListener('click', () => {
+      speed = Math.max(speed - 50, 50); // Increase speed by reducing interval
+      alert('Speed increased!');
+      closeUpgradeMenu();
+    });
+
+    scoreBoostUpgrade.addEventListener('click', () => {
+      doubleScoreNext = true; // Enable double score for the next food
+      alert('Next food will give double points!');
+      closeUpgradeMenu();
+    });
+
+    closeUpgrade.addEventListener('click', closeUpgradeMenu);
+
+    function closeUpgradeMenu() {
+      upgradeMenu.style.display = 'none';
+    }
 
     function createGrid() {
       grid.innerHTML = '';
@@ -108,9 +157,14 @@
       snake.push(head);
 
       if (head[0] === food[0] && head[1] === food[1]) {
-        score++;
+        score += doubleScoreNext ? 2 : 1;
+        doubleScoreNext = false;
         scoreDisplay.textContent = `Score: ${score}`;
         food = [Math.floor(Math.random() * gridSize), Math.floor(Math.random() * gridSize)];
+        if (score % 5 === 0 && !upgradeHintShown) {
+          upgradeHint.style.display = 'block';
+          upgradeHintShown = true;
+        }
       } else {
         snake.shift();
       }
@@ -133,7 +187,10 @@
       direction = 'RIGHT';
       food = [Math.floor(Math.random() * gridSize), Math.floor(Math.random() * gridSize)];
       score = 0;
+      speed = 200;
       scoreDisplay.textContent = `Score: ${score}`;
+      upgradeHint.style.display = 'none';
+      upgradeHintShown = false;
       home.style.display = 'block';
       game.style.display = 'none';
     }
@@ -146,9 +203,14 @@
         if (e.key === 'ArrowDown' && direction !== 'UP') direction = 'DOWN';
         if (e.key === 'ArrowLeft' && direction !== 'RIGHT') direction = 'LEFT';
         if (e.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
+        if (e.key === 'e' && upgradeHintShown) {
+          upgradeMenu.style.display = 'block';
+          upgradeHint.style.display = 'none';
+        }
       });
-      interval = setInterval(moveSnake, 200);
+      interval = setInterval(moveSnake, speed);
     }
   </script>
 </body>
 </html>
+
