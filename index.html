@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C's Classic Gamex</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #282c34;
+      color: white;
+      text-align: center;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .game-container {
+      margin-top: 20px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(20, 20px);
+      grid-gap: 1px;
+    }
+    .cell {
+      width: 20px;
+      height: 20px;
+      background-color: #444;
+    }
+    .snake {
+      background-color: lime;
+    }
+    .food {
+      background-color: red;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: limegreen;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Welcome to C's Classic Gamex</h1>
+  <div id="home">
+    <button id="startButton">Play Snake</button>
+    <p>Use arrow keys to control the snake. Eat food to score points!</p>
+  </div>
+  <div id="game" style="display: none;">
+    <h2>Snake Game</h2>
+    <p id="score">Score: 0</p>
+    <div class="grid" id="grid"></div>
+  </div>
+  <script>
+    const gridSize = 20;
+    let snake = [[10, 10]];
+    let direction = 'RIGHT';
+    let food = [Math.floor(Math.random() * gridSize), Math.floor(Math.random() * gridSize)];
+    let score = 0;
+    let interval;
+
+    const grid = document.getElementById('grid');
+    const scoreDisplay = document.getElementById('score');
+    const home = document.getElementById('home');
+    const game = document.getElementById('game');
+    const startButton = document.getElementById('startButton');
+
+    startButton.addEventListener('click', () => {
+      home.style.display = 'none';
+      game.style.display = 'block';
+      startGame();
+    });
+
+    function createGrid() {
+      grid.innerHTML = '';
+      for (let i = 0; i < gridSize * gridSize; i++) {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        grid.appendChild(cell);
+      }
+    }
+
+    function updateGrid() {
+      const cells = document.querySelectorAll('.cell');
+      cells.forEach(cell => cell.className = 'cell');
+      snake.forEach(([x, y]) => {
+        const index = x * gridSize + y;
+        cells[index].classList.add('snake');
+      });
+      const foodIndex = food[0] * gridSize + food[1];
+      cells[foodIndex].classList.add('food');
+    }
+
+    function moveSnake() {
+      const head = [...snake[snake.length - 1]];
+      if (direction === 'UP') head[0]--;
+      if (direction === 'DOWN') head[0]++;
+      if (direction === 'LEFT') head[1]--;
+      if (direction === 'RIGHT') head[1]++;
+
+      snake.push(head);
+
+      if (head[0] === food[0] && head[1] === food[1]) {
+        score++;
+        scoreDisplay.textContent = `Score: ${score}`;
+        food = [Math.floor(Math.random() * gridSize), Math.floor(Math.random() * gridSize)];
+      } else {
+        snake.shift();
+      }
+
+      if (
+        head[0] < 0 || head[1] < 0 ||
+        head[0] >= gridSize || head[1] >= gridSize ||
+        snake.slice(0, -1).some(([x, y]) => x === head[0] && y === head[1])
+      ) {
+        clearInterval(interval);
+        alert(`Game Over! Your score: ${score}`);
+        resetGame();
+      }
+
+      updateGrid();
+    }
+
+    function resetGame() {
+      snake = [[10, 10]];
+      direction = 'RIGHT';
+      food = [Math.floor(Math.random() * gridSize), Math.floor(Math.random() * gridSize)];
+      score = 0;
+      scoreDisplay.textContent = `Score: ${score}`;
+      home.style.display = 'block';
+      game.style.display = 'none';
+    }
+
+    function startGame() {
+      createGrid();
+      updateGrid();
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowUp' && direction !== 'DOWN') direction = 'UP';
+        if (e.key === 'ArrowDown' && direction !== 'UP') direction = 'DOWN';
+        if (e.key === 'ArrowLeft' && direction !== 'RIGHT') direction = 'LEFT';
+        if (e.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
+      });
+      interval = setInterval(moveSnake, 200);
+    }
+  </script>
+</body>
+</html>
