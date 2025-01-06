@@ -43,26 +43,10 @@
       border-radius: 5px;
       margin-top: 10px;
     }
-    .shop, .leaderboard {
-      position: absolute;
-      top: 30%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+    .leaderboard {
       background-color: #333;
       padding: 20px;
       border-radius: 8px;
-      display: none;
-    }
-    .shop h3, .leaderboard h3 {
-      margin: 0 0 10px;
-    }
-    .overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.7);
       display: none;
     }
   </style>
@@ -76,20 +60,10 @@
   <div id="game" style="display: none;">
     <h2>Snake Game</h2>
     <p id="score">Score: 0</p>
-    <p id="pauseHint">Press P to Pause/Resume</p>
-    <p id="upgradeHint" style="color: yellow; display: none;">Press E to open the shop!</p>
     <div class="grid" id="grid"></div>
   </div>
-  <div class="shop" id="shopMenu">
-    <h3>Shop (Points: <span id="points">0</span>)</h3>
-    <button id="speedUpgrade">Speed Upgrade (10 Points)</button>
-    <button id="frenzyUpgrade">Frenzy Mode (15 Points)</button>
-    <button id="closeShop">Close</button>
-  </div>
   <div class="leaderboard" id="leaderboardMenu">
-    <h3>Leaderboard</h3>
-    <ul id="leaderboardList"></ul>
-    <button id="closeLeaderboard">Close</button>
+    <h3>Best Score: <span id="bestScore">0</span></h3>
   </div>
   <script>
     const gridSize = 20;
@@ -97,32 +71,29 @@
     let direction = 'RIGHT';
     let food = [generateFood()];
     let score = 0;
-    let points = 0;
+    let bestScore = 0;
     let interval;
     let paused = false;
-    let frenzyActive = false;
-    let frenzyTimeout;
-    let topScores = [];
 
     const grid = document.getElementById('grid');
     const scoreDisplay = document.getElementById('score');
-    const pointsDisplay = document.getElementById('points');
     const home = document.getElementById('home');
     const game = document.getElementById('game');
     const startButton = document.getElementById('startButton');
-    const shopMenu = document.getElementById('shopMenu');
-    const speedUpgrade = document.getElementById('speedUpgrade');
-    const frenzyUpgrade = document.getElementById('frenzyUpgrade');
-    const closeShop = document.getElementById('closeShop');
     const leaderboardMenu = document.getElementById('leaderboardMenu');
-    const leaderboardList = document.getElementById('leaderboardList');
-    const closeLeaderboard = document.getElementById('closeLeaderboard');
-    const upgradeHint = document.getElementById('upgradeHint');
+    const bestScoreDisplay = document.getElementById('bestScore');
 
     startButton.addEventListener('click', () => {
       home.style.display = 'none';
       game.style.display = 'block';
       startGame();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowUp' && direction !== 'DOWN') direction = 'UP';
+      if (e.key === 'ArrowDown' && direction !== 'UP') direction = 'DOWN';
+      if (e.key === 'ArrowLeft' && direction !== 'RIGHT') direction = 'LEFT';
+      if (e.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
     });
 
     function startGame() {
@@ -131,15 +102,10 @@
       clearInterval(interval);
       interval = setInterval(moveSnake, 200);
       score = 0;
-      points = 0;
       snake = [[10, 10]];
       direction = 'RIGHT';
       food = [generateFood()];
-      paused = false;
-      frenzyActive = false;
-      frenzyTimeout = null;
       scoreDisplay.textContent = `Score: ${score}`;
-      pointsDisplay.textContent = points;
     }
 
     function createGrid() {
@@ -184,39 +150,33 @@
         head[1] >= gridSize ||
         snake.some(([x, y]) => x === head[0] && y === head[1])
       ) {
-        alert(`Game Over! Your score: ${score}`);
-        updateLeaderboard(score);
-        resetGame();
+        gameOver();
         return;
       }
 
       snake.push(head);
       if (food.some(([fx, fy]) => fx === head[0] && fy === head[1])) {
         score++;
-        points++;
         food = [generateFood()];
-        if (score % 5 === 0) upgradeHint.style.display = 'block';
       } else {
         snake.shift();
       }
 
       scoreDisplay.textContent = `Score: ${score}`;
-      pointsDisplay.textContent = points;
       updateGrid();
     }
 
-    function updateLeaderboard(newScore) {
-      topScores.push(newScore);
-      topScores.sort((a, b) => b - a);
-      leaderboardList.innerHTML = topScores
-        .slice(0, 5)
-        .map(score => `<li>${score}</li>`)
-        .join('');
-      leaderboardMenu.style.display = 'block';
+    function gameOver() {
+      clearInterval(interval);
+      alert(`Game Over! Your score: ${score}`);
+      if (score > bestScore) {
+        bestScore = score;
+        bestScoreDisplay.textContent = bestScore;
+      }
+      resetGame();
     }
 
     function resetGame() {
-      clearInterval(interval);
       home.style.display = 'block';
       game.style.display = 'none';
     }
