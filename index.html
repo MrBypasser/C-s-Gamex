@@ -17,9 +17,6 @@
       justify-content: center;
       align-items: center;
     }
-    .game-container {
-      margin-top: 20px;
-    }
     .grid {
       display: grid;
       grid-template-columns: repeat(20, 20px);
@@ -44,8 +41,9 @@
       border: none;
       cursor: pointer;
       border-radius: 5px;
+      margin-top: 10px;
     }
-    .upgrade-container {
+    .shop, .leaderboard {
       position: absolute;
       top: 30%;
       left: 50%;
@@ -55,11 +53,17 @@
       border-radius: 8px;
       display: none;
     }
-    .upgrade-container h3 {
+    .shop h3, .leaderboard h3 {
       margin: 0 0 10px;
     }
-    .upgrade-container button {
-      margin-top: 10px;
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: none;
     }
   </style>
 </head>
@@ -72,36 +76,48 @@
   <div id="game" style="display: none;">
     <h2>Snake Game</h2>
     <p id="score">Score: 0</p>
-    <p id="upgradeHint" style="color: yellow; display: none;">Press E to open upgrades!</p>
+    <p id="pauseHint">Press P to Pause/Resume</p>
+    <p id="upgradeHint" style="color: yellow; display: none;">Press E to open the shop!</p>
     <div class="grid" id="grid"></div>
   </div>
-  <div class="upgrade-container" id="upgradeMenu">
-    <h3>Choose an Upgrade:</h3>
-    <button id="speedUpgrade">Increase Speed</button>
-    <button id="scoreBoostUpgrade">Double Score on Next Food</button>
-    <button id="closeUpgrade">Close</button>
+  <div class="shop" id="shopMenu">
+    <h3>Shop (Points: <span id="points">0</span>)</h3>
+    <button id="speedUpgrade">Speed Upgrade (10 Points)</button>
+    <button id="frenzyUpgrade">Frenzy Mode (15 Points)</button>
+    <button id="closeShop">Close</button>
+  </div>
+  <div class="leaderboard" id="leaderboardMenu">
+    <h3>Leaderboard</h3>
+    <ul id="leaderboardList"></ul>
+    <button id="closeLeaderboard">Close</button>
   </div>
   <script>
     const gridSize = 20;
     let snake = [[10, 10]];
     let direction = 'RIGHT';
-    let food = [Math.floor(Math.random() * gridSize), Math.floor(Math.random() * gridSize)];
+    let food = [generateFood()];
     let score = 0;
+    let points = 0;
     let interval;
-    let upgradeHintShown = false;
-    let speed = 200;
-    let doubleScoreNext = false;
+    let paused = false;
+    let frenzyActive = false;
+    let frenzyTimeout;
+    let topScores = [];
 
     const grid = document.getElementById('grid');
     const scoreDisplay = document.getElementById('score');
+    const pointsDisplay = document.getElementById('points');
     const home = document.getElementById('home');
     const game = document.getElementById('game');
     const startButton = document.getElementById('startButton');
-    const upgradeHint = document.getElementById('upgradeHint');
-    const upgradeMenu = document.getElementById('upgradeMenu');
+    const shopMenu = document.getElementById('shopMenu');
     const speedUpgrade = document.getElementById('speedUpgrade');
-    const scoreBoostUpgrade = document.getElementById('scoreBoostUpgrade');
-    const closeUpgrade = document.getElementById('closeUpgrade');
+    const frenzyUpgrade = document.getElementById('frenzyUpgrade');
+    const closeShop = document.getElementById('closeShop');
+    const leaderboardMenu = document.getElementById('leaderboardMenu');
+    const leaderboardList = document.getElementById('leaderboardList');
+    const closeLeaderboard = document.getElementById('closeLeaderboard');
+    const upgradeHint = document.getElementById('upgradeHint');
 
     startButton.addEventListener('click', () => {
       home.style.display = 'none';
@@ -110,21 +126,40 @@
     });
 
     speedUpgrade.addEventListener('click', () => {
-      speed = Math.max(speed - 50, 50); // Increase speed by reducing interval
-      alert('Speed increased!');
-      closeUpgradeMenu();
+      if (points >= 10) {
+        points -= 10;
+        pointsDisplay.textContent = points;
+        clearInterval(interval);
+        interval = setInterval(moveSnake, Math.max(50, interval - 50));
+        alert('Speed upgraded!');
+        closeShopMenu();
+      } else {
+        alert('Not enough points!');
+      }
     });
 
-    scoreBoostUpgrade.addEventListener('click', () => {
-      doubleScoreNext = true; // Enable double score for the next food
-      alert('Next food will give double points!');
-      closeUpgradeMenu();
+    frenzyUpgrade.addEventListener('click', () => {
+      if (points >= 15 && !frenzyActive) {
+        points -= 15;
+        pointsDisplay.textContent = points;
+        frenzyActive = true;
+        frenzyTimeout = setTimeout(() => {
+          frenzyActive = false;
+          alert('Frenzy Mode Ended!');
+        }, 30000);
+        generateFrenzyFood();
+        alert('Frenzy Mode Activated!');
+        closeShopMenu();
+      } else {
+        alert('Not enough points or Frenzy Mode already active!');
+      }
     });
 
-    closeUpgrade.addEventListener('click', closeUpgradeMenu);
+    closeShop.addEventListener('click', closeShopMenu);
+    closeLeaderboard.addEventListener('click', closeLeaderboardMenu);
 
-    function closeUpgradeMenu() {
-      upgradeMenu.style.display = 'none';
+    function generateFood() {
+      return [Math.floor(Math.random() * gridSize), Math.floor(Math.random() * gridSize)];
     }
 
     function createGrid() {
@@ -136,6 +171,13 @@
       }
     }
 
+    function generateFrenzyFood() {
+      food = [];
+      for (let i = 0; i < 5; i++) {
+        food.push(generateFood());
+      }
+    }
+
     function updateGrid() {
       const cells = document.querySelectorAll('.cell');
       cells.forEach(cell => cell.className = 'cell');
@@ -143,74 +185,12 @@
         const index = x * gridSize + y;
         cells[index].classList.add('snake');
       });
-      const foodIndex = food[0] * gridSize + food[1];
-      cells[foodIndex].classList.add('food');
-    }
-
-    function moveSnake() {
-      const head = [...snake[snake.length - 1]];
-      if (direction === 'UP') head[0]--;
-      if (direction === 'DOWN') head[0]++;
-      if (direction === 'LEFT') head[1]--;
-      if (direction === 'RIGHT') head[1]++;
-
-      snake.push(head);
-
-      if (head[0] === food[0] && head[1] === food[1]) {
-        score += doubleScoreNext ? 2 : 1;
-        doubleScoreNext = false;
-        scoreDisplay.textContent = `Score: ${score}`;
-        food = [Math.floor(Math.random() * gridSize), Math.floor(Math.random() * gridSize)];
-        if (score % 5 === 0 && !upgradeHintShown) {
-          upgradeHint.style.display = 'block';
-          upgradeHintShown = true;
-        }
-      } else {
-        snake.shift();
-      }
-
-      if (
-        head[0] < 0 || head[1] < 0 ||
-        head[0] >= gridSize || head[1] >= gridSize ||
-        snake.slice(0, -1).some(([x, y]) => x === head[0] && y === head[1])
-      ) {
-        clearInterval(interval);
-        alert(`Game Over! Your score: ${score}`);
-        resetGame();
-      }
-
-      updateGrid();
-    }
-
-    function resetGame() {
-      snake = [[10, 10]];
-      direction = 'RIGHT';
-      food = [Math.floor(Math.random() * gridSize), Math.floor(Math.random() * gridSize)];
-      score = 0;
-      speed = 200;
-      scoreDisplay.textContent = `Score: ${score}`;
-      upgradeHint.style.display = 'none';
-      upgradeHintShown = false;
-      home.style.display = 'block';
-      game.style.display = 'none';
-    }
-
-    function startGame() {
-      createGrid();
-      updateGrid();
-      window.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowUp' && direction !== 'DOWN') direction = 'UP';
-        if (e.key === 'ArrowDown' && direction !== 'UP') direction = 'DOWN';
-        if (e.key === 'ArrowLeft' && direction !== 'RIGHT') direction = 'LEFT';
-        if (e.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
-        if (e.key === 'e' && upgradeHintShown) {
-          upgradeMenu.style.display = 'block';
-          upgradeHint.style.display = 'none';
-        }
+      food.forEach(([x, y]) => {
+        const index = x * gridSize + y;
+        cells[index].classList.add('food');
       });
-      interval = setInterval(moveSnake, speed);
     }
+    ...
   </script>
 </body>
 </html>
-
