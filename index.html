@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>C's Classic Gamex</title>
+  <title>C's Classic Gamex - Tetris</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -42,21 +42,11 @@
   </style>
 </head>
 <body>
-  <h1>C's Classic Gamex</h1>
+  <h1>C's Classic Gamex - Tetris</h1>
+
   <div id="menu" class="menu active">
     <h2>Select a Game</h2>
-    <button onclick="startGame('snake')">Play Snake</button>
-    <button onclick="startGame('tetris')">Play Tetris</button>
-    <button onclick="startGame('breakout')">Play Breakout</button>
-    <button onclick="startGame('flappybird')">Play Flappy Bird</button>
-    <button onclick="startGame('memorycard')">Play Memory Card Game</button>
-  </div>
-
-  <!-- Snake Game -->
-  <div id="snake" class="game-section">
-    <h2>Snake Game</h2>
-    <canvas id="snakeCanvas" width="400" height="400"></canvas>
-    <p id="snakeScore">Score: 0</p>
+    <button onclick="startTetris()">Play Tetris</button>
     <button onclick="returnToMenu()">Return to Menu</button>
   </div>
 
@@ -64,222 +54,172 @@
   <div id="tetris" class="game-section">
     <h2>Tetris Game</h2>
     <canvas id="tetrisCanvas" width="200" height="400"></canvas>
-    <button onclick="returnToMenu()">Return to Menu</button>
-  </div>
-
-  <!-- Breakout Game -->
-  <div id="breakout" class="game-section">
-    <h2>Breakout Game</h2>
-    <canvas id="breakoutCanvas" width="400" height="300"></canvas>
-    <button onclick="returnToMenu()">Return to Menu</button>
-  </div>
-
-  <!-- Flappy Bird Game -->
-  <div id="flappybird" class="game-section">
-    <h2>Flappy Bird Game</h2>
-    <canvas id="flappybirdCanvas" width="320" height="480"></canvas>
-    <button onclick="returnToMenu()">Return to Menu</button>
-  </div>
-
-  <!-- Memory Card Game -->
-  <div id="memorycard" class="game-section">
-    <h2>Memory Card Game</h2>
-    <div id="memorycardGrid"></div>
+    <p id="tetrisScore">Score: 0</p>
     <button onclick="returnToMenu()">Return to Menu</button>
   </div>
 
   <script>
-    // Menu and Game Sections
-    const menu = document.getElementById('menu');
-    const snakeSection = document.getElementById('snake');
-    const tetrisSection = document.getElementById('tetris');
-    const breakoutSection = document.getElementById('breakout');
-    const flappybirdSection = document.getElementById('flappybird');
-    const memorycardSection = document.getElementById('memorycard');
-
-    let activeGame = null;
-
-    function startGame(game) {
-      menu.classList.remove('active');
-      activeGame = game;
-
-      if (game === 'snake') {
-        snakeSection.classList.add('active');
-        startSnake();
-      } else if (game === 'tetris') {
-        tetrisSection.classList.add('active');
-        startTetris();
-      } else if (game === 'breakout') {
-        breakoutSection.classList.add('active');
-        startBreakout();
-      } else if (game === 'flappybird') {
-        flappybirdSection.classList.add('active');
-        startFlappyBird();
-      } else if (game === 'memorycard') {
-        memorycardSection.classList.add('active');
-        startMemoryCard();
-      }
-    }
-
-    function returnToMenu() {
-      if (activeGame === 'snake') stopSnake();
-      else if (activeGame === 'tetris') stopTetris();
-      else if (activeGame === 'breakout') stopBreakout();
-      else if (activeGame === 'flappybird') stopFlappyBird();
-      else if (activeGame === 'memorycard') stopMemoryCard();
-
-      snakeSection.classList.remove('active');
-      tetrisSection.classList.remove('active');
-      breakoutSection.classList.remove('active');
-      flappybirdSection.classList.remove('active');
-      memorycardSection.classList.remove('active');
-      menu.classList.add('active');
-    }
-
-    // -------------------
-    // Snake Game Logic
-    // -------------------
-    let snake, direction, food, snakeInterval, snakeScore;
-
-    function startSnake() {
-      const canvas = document.getElementById('snakeCanvas');
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      snake = [{ x: 10, y: 10 }];
-      direction = 'RIGHT';
-      food = { x: Math.floor(Math.random() * 20), y: Math.floor(Math.random() * 20) };
-      snakeScore = 0;
-
-      document.getElementById('snakeScore').textContent = `Score: ${snakeScore}`;
-
-      snakeInterval = setInterval(() => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        moveSnake();
-        drawSnake(ctx);
-        drawFood(ctx);
-      }, 100);
-
-      document.addEventListener('keydown', handleSnakeKeyPress);
-    }
-
-    function handleSnakeKeyPress(e) {
-      if (e.key === 'ArrowUp' && direction !== 'DOWN') direction = 'UP';
-      if (e.key === 'ArrowDown' && direction !== 'UP') direction = 'DOWN';
-      if (e.key === 'ArrowLeft' && direction !== 'RIGHT') direction = 'LEFT';
-      if (e.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
-    }
-
-    function moveSnake() {
-      const head = { ...snake[0] };
-      if (direction === 'UP') head.y--;
-      if (direction === 'DOWN') head.y++;
-      if (direction === 'LEFT') head.x--;
-      if (direction === 'RIGHT') head.x++;
-
-      if (head.x === food.x && head.y === food.y) {
-        snake.push({}); // Grow snake
-        food = { x: Math.floor(Math.random() * 20), y: Math.floor(Math.random() * 20) };
-        snakeScore++;
-        document.getElementById('snakeScore').textContent = `Score: ${snakeScore}`;
-      } else {
-        snake.pop();
-      }
-
-      snake.unshift(head);
-
-      if (head.x < 0 || head.x >= 20 || head.y < 0 || head.y >= 20 || collision(head)) {
-        clearInterval(snakeInterval);
-        alert('Game Over! Final Score: ' + snakeScore);
-        returnToMenu();
-      }
-    }
-
-    function collision(head) {
-      return snake.some((segment, index) => index !== 0 && segment.x === head.x && segment.y === head.y);
-    }
-
-    function drawSnake(ctx) {
-      snake.forEach(segment => {
-        ctx.fillStyle = 'lime';
-        ctx.fillRect(segment.x * 20, segment.y * 20, 20, 20);
-      });
-    }
-
-    function drawFood(ctx) {
-      ctx.fillStyle = 'red';
-      ctx.fillRect(food.x * 20, food.y * 20, 20, 20);
-    }
-
-    function stopSnake() {
-      clearInterval(snakeInterval);
-      document.removeEventListener('keydown', handleSnakeKeyPress);
-    }
-
-    // -------------------
-    // Tetris Game Logic (Simplified Version)
-    // -------------------
     const tetrisCanvas = document.getElementById('tetrisCanvas');
     const tetrisCtx = tetrisCanvas.getContext('2d');
+    const scoreElement = document.getElementById('tetrisScore');
 
+    const COLS = 10;
+    const ROWS = 20;
+    const BLOCK_SIZE = 20;
+
+    let board, score, activePiece, gameInterval, gameRunning;
+
+    const tetrominoes = [
+      [[1, 1, 1], [0, 1, 0]], // T
+      [[1, 1], [1, 1]], // O
+      [[1, 1, 0], [0, 1, 1]], // S
+      [[0, 1, 1], [1, 1, 0]], // Z
+      [[1, 0, 0], [1, 1, 1]], // L
+      [[0, 0, 1], [1, 1, 1]], // J
+      [[1, 1, 1, 1]] // I
+    ];
+
+    // Start Game
     function startTetris() {
+      gameRunning = true;
+      score = 0;
+      board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+      updateScore();
+      spawnPiece();
+      gameInterval = setInterval(gameLoop, 500); // Speed of the game
+      document.addEventListener('keydown', handleKeyPress);
+    }
+
+    function gameLoop() {
+      if (!gameRunning) return;
+      movePieceDown();
+      drawBoard();
+      drawPiece();
+    }
+
+    // Handle piece movement
+    function movePieceDown() {
+      if (canMove(activePiece, 0, 1)) {
+        activePiece.y++;
+      } else {
+        placePiece();
+        spawnPiece();
+      }
+    }
+
+    function canMove(piece, offsetX, offsetY) {
+      for (let y = 0; y < piece.shape.length; y++) {
+        for (let x = 0; x < piece.shape[y].length; x++) {
+          if (piece.shape[y][x] && (piece.y + y + offsetY >= ROWS || piece.x + x + offsetX < 0 || piece.x + x + offsetX >= COLS || board[piece.y + y + offsetY][piece.x + x + offsetX])) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+
+    function placePiece() {
+      for (let y = 0; y < activePiece.shape.length; y++) {
+        for (let x = 0; x < activePiece.shape[y].length; x++) {
+          if (activePiece.shape[y][x]) {
+            board[activePiece.y + y][activePiece.x + x] = 1;
+          }
+        }
+      }
+      clearRows();
+    }
+
+    function clearRows() {
+      for (let row = ROWS - 1; row >= 0; row--) {
+        if (board[row].every(cell => cell !== 0)) {
+          board.splice(row, 1);
+          board.unshift(Array(COLS).fill(0));
+          score += 100;
+          updateScore();
+        }
+      }
+    }
+
+    // Update the score
+    function updateScore() {
+      scoreElement.textContent = `Score: ${score}`;
+    }
+
+    // Draw the board and piece
+    function drawBoard() {
       tetrisCtx.clearRect(0, 0, tetrisCanvas.width, tetrisCanvas.height);
-      tetrisCtx.fillStyle = 'white';
-      tetrisCtx.font = '20px Arial';
-      tetrisCtx.fillText('Tetris Game (Basic Version)', 20, 100);
+
+      // Draw the board
+      for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+          if (board[row][col]) {
+            tetrisCtx.fillStyle = 'blue';
+            tetrisCtx.fillRect(col * BLOCK_SIZE, row * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+          }
+        }
+      }
     }
 
-    function stopTetris() {
-      // Stop Tetris game logic
+    function drawPiece() {
+      tetrisCtx.fillStyle = 'green';
+      for (let y = 0; y < activePiece.shape.length; y++) {
+        for (let x = 0; x < activePiece.shape[y].length; x++) {
+          if (activePiece.shape[y][x]) {
+            tetrisCtx.fillRect((activePiece.x + x) * BLOCK_SIZE, (activePiece.y + y) * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+          }
+        }
+      }
     }
 
-    // -------------------
-    // Breakout Game Logic (Simplified Version)
-    // -------------------
-    const breakoutCanvas = document.getElementById('breakoutCanvas');
-    const breakoutCtx = breakoutCanvas.getContext('2d');
+    // Spawn new piece
+    function spawnPiece() {
+      const randomIndex = Math.floor(Math.random() * tetrominoes.length);
+      activePiece = {
+        shape: tetrominoes[randomIndex],
+        x: Math.floor(COLS / 2) - Math.floor(tetrominoes[randomIndex][0].length / 2),
+        y: 0
+      };
 
-    function startBreakout() {
-      breakoutCtx.clearRect(0, 0, breakoutCanvas.width, breakoutCanvas.height);
-      breakoutCtx.fillStyle = 'white';
-      breakoutCtx.font = '20px Arial';
-      breakoutCtx.fillText('Breakout Game (Basic Version)', 20, 100);
+      if (!canMove(activePiece, 0, 0)) {
+        gameOver();
+      }
     }
 
-    function stopBreakout() {
-      // Stop Breakout game logic
+    // Handle keypress events for movement
+    function handleKeyPress(e) {
+      if (e.key === 'ArrowLeft' && canMove(activePiece, -1, 0)) activePiece.x--;
+      if (e.key === 'ArrowRight' && canMove(activePiece, 1, 0)) activePiece.x++;
+      if (e.key === 'ArrowDown' && canMove(activePiece, 0, 1)) movePieceDown();
+      if (e.key === 'ArrowUp') rotatePiece();
     }
 
-    // -------------------
-    // Flappy Bird Game Logic (Simplified Version)
-    // -------------------
-    const flappybirdCanvas = document.getElementById('flappybirdCanvas');
-    const flappybirdCtx = flappybirdCanvas.getContext('2d');
+    function rotatePiece() {
+      const rotatedPiece = {
+        shape: activePiece.shape[0].map((_, index) => activePiece.shape.map(row => row[index])).reverse(),
+        x: activePiece.x,
+        y: activePiece.y
+      };
 
-    function startFlappyBird() {
-      flappybirdCtx.clearRect(0, 0, flappybirdCanvas.width, flappybirdCanvas.height);
-      flappybirdCtx.fillStyle = 'white';
-      flappybirdCtx.font = '20px Arial';
-      flappybirdCtx.fillText('Flappy Bird Game (Basic Version)', 20, 100);
+      if (canMove(rotatedPiece, 0, 0)) {
+        activePiece = rotatedPiece;
+      }
     }
 
-    function stopFlappyBird() {
-      // Stop Flappy Bird game logic
+    // End game
+    function gameOver() {
+      clearInterval(gameInterval);
+      alert('Game Over! Your score: ' + score);
+      returnToMenu();
     }
 
-    // -------------------
-    // Memory Card Game Logic (Simplified Version)
-    // -------------------
-    const memorycardGrid = document.getElementById('memorycardGrid');
-
-    function startMemoryCard() {
-      memorycardGrid.innerHTML = '';
-      memorycardGrid.textContent = 'Memory Card Game (Basic Version)';
-    }
-
-    function stopMemoryCard() {
-      // Stop Memory Card game logic
+    // Return to menu
+    function returnToMenu() {
+      clearInterval(gameInterval);
+      menu.classList.add('active');
+      document.getElementById('tetris').classList.remove('active');
+      document.removeEventListener('keydown', handleKeyPress);
     }
   </script>
 </body>
 </html>
+
