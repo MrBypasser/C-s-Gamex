@@ -217,29 +217,33 @@
     }
 
     // -------------------
-    // Tetris Game Logic
+    // Tetris Game Logic (Simplified Version)
     // -------------------
     const tetrisCanvas = document.getElementById('tetrisCanvas');
     const tetrisCtx = tetrisCanvas.getContext('2d');
 
     function startTetris() {
       tetrisCtx.clearRect(0, 0, tetrisCanvas.width, tetrisCanvas.height);
-      // Implement the Tetris logic here (we can leave it as a placeholder or actual game logic)
+      tetrisCtx.fillStyle = 'white';
+      tetrisCtx.font = '20px Arial';
+      tetrisCtx.fillText('Tetris Game (Basic Version)', 20, 100);
     }
 
     function stopTetris() {
-      // Stop Tetris logic
+      // Stop Tetris game logic
     }
 
     // -------------------
-    // Breakout Game Logic
+    // Breakout Game Logic (Simplified Version)
     // -------------------
     const breakoutCanvas = document.getElementById('breakoutCanvas');
     const breakoutCtx = breakoutCanvas.getContext('2d');
 
     function startBreakout() {
       breakoutCtx.clearRect(0, 0, breakoutCanvas.width, breakoutCanvas.height);
-      // Implement Breakout game logic
+      breakoutCtx.fillStyle = 'white';
+      breakoutCtx.font = '20px Arial';
+      breakoutCtx.fillText('Breakout Game (Basic Version)', 20, 100);
     }
 
     function stopBreakout() {
@@ -247,14 +251,16 @@
     }
 
     // -------------------
-    // Flappy Bird Game Logic
+    // Flappy Bird Game Logic (Simplified Version)
     // -------------------
     const flappybirdCanvas = document.getElementById('flappybirdCanvas');
     const flappybirdCtx = flappybirdCanvas.getContext('2d');
 
     function startFlappyBird() {
       flappybirdCtx.clearRect(0, 0, flappybirdCanvas.width, flappybirdCanvas.height);
-      // Implement Flappy Bird logic
+      flappybirdCtx.fillStyle = 'white';
+      flappybirdCtx.font = '20px Arial';
+      flappybirdCtx.fillText('Flappy Bird Game (Basic Version)', 20, 100);
     }
 
     function stopFlappyBird() {
@@ -262,19 +268,18 @@
     }
 
     // -------------------
-    // Memory Card Game Logic
+    // Memory Card Game Logic (Simplified Version)
     // -------------------
     const memorycardGrid = document.getElementById('memorycardGrid');
 
     function startMemoryCard() {
       memorycardGrid.innerHTML = '';
-      // Implement memory card logic
+      memorycardGrid.textContent = 'Memory Card Game (Basic Version)';
     }
 
     function stopMemoryCard() {
-      // Stop memory card game logic
+      // Stop Memory Card game logic
     }
   </script>
 </body>
 </html>
-
