@@ -17,15 +17,11 @@
       justify-content: center;
       align-items: center;
     }
-    .menu, .game-section {
-      display: none;
-    }
-    .active {
-      display: block;
-    }
+
     canvas {
       border: 1px solid white;
     }
+
     button {
       padding: 10px 20px;
       font-size: 16px;
@@ -36,40 +32,33 @@
       border-radius: 5px;
       margin: 10px;
     }
-    h1 {
-      margin-bottom: 0;
+
+    #score {
+      font-size: 1.2rem;
     }
+
   </style>
 </head>
 <body>
   <h1>C's Classic Gamex - Tetris</h1>
-
-  <div id="menu" class="menu active">
-    <h2>Select a Game</h2>
-    <button onclick="startTetris()">Play Tetris</button>
-    <button onclick="returnToMenu()">Return to Menu</button>
-  </div>
-
-  <!-- Tetris Game -->
-  <div id="tetris" class="game-section">
-    <h2>Tetris Game</h2>
-    <canvas id="tetrisCanvas" width="200" height="400"></canvas>
-    <p id="tetrisScore">Score: 0</p>
-    <button onclick="returnToMenu()">Return to Menu</button>
-  </div>
-
+  <canvas id="tetrisCanvas" width="200" height="400"></canvas>
+  <p id="score">Score: 0</p>
+  <button onclick="startGame()">Start Game</button>
+  
   <script>
-    const tetrisCanvas = document.getElementById('tetrisCanvas');
-    const tetrisCtx = tetrisCanvas.getContext('2d');
-    const scoreElement = document.getElementById('tetrisScore');
+    const canvas = document.getElementById('tetrisCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreElement = document.getElementById('score');
 
     const COLS = 10;
     const ROWS = 20;
     const BLOCK_SIZE = 20;
+    const COLORS = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#888888'];
 
-    let board, score, activePiece, gameInterval, gameRunning;
+    let board, activePiece, score, gameInterval;
 
-    const tetrominoes = [
+    // Tetriminos shapes
+    const tetrominos = [
       [[1, 1, 1], [0, 1, 0]], // T
       [[1, 1], [1, 1]], // O
       [[1, 1, 0], [0, 1, 1]], // S
@@ -79,45 +68,54 @@
       [[1, 1, 1, 1]] // I
     ];
 
-    // Start Game
-    function startTetris() {
-      gameRunning = true;
+    // Start the game
+    function startGame() {
       score = 0;
       board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
       updateScore();
       spawnPiece();
-      gameInterval = setInterval(gameLoop, 500); // Speed of the game
+      gameInterval = setInterval(gameLoop, 500);
       document.addEventListener('keydown', handleKeyPress);
     }
 
+    // Game loop
     function gameLoop() {
-      if (!gameRunning) return;
-      movePieceDown();
+      if (!movePieceDown()) {
+        placePiece();
+        spawnPiece();
+        clearRows();
+      }
       drawBoard();
       drawPiece();
     }
 
-    // Handle piece movement
+    // Move piece down
     function movePieceDown() {
       if (canMove(activePiece, 0, 1)) {
         activePiece.y++;
+        return true;
       } else {
-        placePiece();
-        spawnPiece();
+        return false;
       }
     }
 
+    // Check if a piece can move
     function canMove(piece, offsetX, offsetY) {
       for (let y = 0; y < piece.shape.length; y++) {
         for (let x = 0; x < piece.shape[y].length; x++) {
-          if (piece.shape[y][x] && (piece.y + y + offsetY >= ROWS || piece.x + x + offsetX < 0 || piece.x + x + offsetX >= COLS || board[piece.y + y + offsetY][piece.x + x + offsetX])) {
-            return false;
+          if (piece.shape[y][x]) {
+            const newX = piece.x + x + offsetX;
+            const newY = piece.y + y + offsetY;
+            if (newX < 0 || newX >= COLS || newY >= ROWS || board[newY][newX]) {
+              return false;
+            }
           }
         }
       }
       return true;
     }
 
+    // Place piece on the board
     function placePiece() {
       for (let y = 0; y < activePiece.shape.length; y++) {
         for (let x = 0; x < activePiece.shape[y].length; x++) {
@@ -126,12 +124,12 @@
           }
         }
       }
-      clearRows();
     }
 
+    // Clear full rows
     function clearRows() {
       for (let row = ROWS - 1; row >= 0; row--) {
-        if (board[row].every(cell => cell !== 0)) {
+        if (board[row].every(cell => cell === 1)) {
           board.splice(row, 1);
           board.unshift(Array(COLS).fill(0));
           score += 100;
@@ -145,47 +143,46 @@
       scoreElement.textContent = `Score: ${score}`;
     }
 
-    // Draw the board and piece
+    // Draw the board
     function drawBoard() {
-      tetrisCtx.clearRect(0, 0, tetrisCanvas.width, tetrisCanvas.height);
-
-      // Draw the board
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       for (let row = 0; row < ROWS; row++) {
         for (let col = 0; col < COLS; col++) {
           if (board[row][col]) {
-            tetrisCtx.fillStyle = 'blue';
-            tetrisCtx.fillRect(col * BLOCK_SIZE, row * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+            ctx.fillStyle = '#888';
+            ctx.fillRect(col * BLOCK_SIZE, row * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
           }
         }
       }
     }
 
+    // Draw the current piece
     function drawPiece() {
-      tetrisCtx.fillStyle = 'green';
+      ctx.fillStyle = COLORS[activePiece.color];
       for (let y = 0; y < activePiece.shape.length; y++) {
         for (let x = 0; x < activePiece.shape[y].length; x++) {
           if (activePiece.shape[y][x]) {
-            tetrisCtx.fillRect((activePiece.x + x) * BLOCK_SIZE, (activePiece.y + y) * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+            ctx.fillRect((activePiece.x + x) * BLOCK_SIZE, (activePiece.y + y) * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
           }
         }
       }
     }
 
-    // Spawn new piece
+    // Spawn a new piece
     function spawnPiece() {
-      const randomIndex = Math.floor(Math.random() * tetrominoes.length);
+      const randomIndex = Math.floor(Math.random() * tetrominos.length);
       activePiece = {
-        shape: tetrominoes[randomIndex],
-        x: Math.floor(COLS / 2) - Math.floor(tetrominoes[randomIndex][0].length / 2),
-        y: 0
+        shape: tetrominos[randomIndex],
+        x: Math.floor(COLS / 2) - Math.floor(tetrominos[randomIndex][0].length / 2),
+        y: 0,
+        color: randomIndex
       };
-
       if (!canMove(activePiece, 0, 0)) {
         gameOver();
       }
     }
 
-    // Handle keypress events for movement
+    // Handle key press
     function handleKeyPress(e) {
       if (e.key === 'ArrowLeft' && canMove(activePiece, -1, 0)) activePiece.x--;
       if (e.key === 'ArrowRight' && canMove(activePiece, 1, 0)) activePiece.x++;
@@ -193,33 +190,20 @@
       if (e.key === 'ArrowUp') rotatePiece();
     }
 
+    // Rotate the current piece
     function rotatePiece() {
-      const rotatedPiece = {
-        shape: activePiece.shape[0].map((_, index) => activePiece.shape.map(row => row[index])).reverse(),
-        x: activePiece.x,
-        y: activePiece.y
-      };
-
+      const rotatedShape = activePiece.shape[0].map((_, index) => activePiece.shape.map(row => row[index])).reverse();
+      const rotatedPiece = { ...activePiece, shape: rotatedShape };
       if (canMove(rotatedPiece, 0, 0)) {
         activePiece = rotatedPiece;
       }
     }
 
-    // End game
+    // End the game
     function gameOver() {
       clearInterval(gameInterval);
       alert('Game Over! Your score: ' + score);
-      returnToMenu();
-    }
-
-    // Return to menu
-    function returnToMenu() {
-      clearInterval(gameInterval);
-      menu.classList.add('active');
-      document.getElementById('tetris').classList.remove('active');
-      document.removeEventListener('keydown', handleKeyPress);
     }
   </script>
 </body>
 </html>
-
