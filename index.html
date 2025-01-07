@@ -17,6 +17,12 @@
       justify-content: center;
       align-items: center;
     }
+    .menu, .game-section {
+      display: none;
+    }
+    .active {
+      display: block;
+    }
     .grid {
       display: grid;
       grid-template-columns: repeat(20, 20px);
@@ -41,101 +47,140 @@
       border: none;
       cursor: pointer;
       border-radius: 5px;
-      margin-top: 10px;
+      margin: 10px;
     }
-    .leaderboard {
-      background-color: #333;
-      padding: 20px;
-      border-radius: 8px;
-      display: none;
+    canvas {
+      border: 1px solid white;
     }
   </style>
 </head>
 <body>
-  <h1>Welcome to C's Classic Gamex</h1>
-  <div id="home">
-    <button id="startButton">Play Snake</button>
-    <p>Use arrow keys to control the snake. Eat food to score points!</p>
+  <h1>C's Classic Gamex</h1>
+  <div id="menu" class="menu active">
+    <h2>Select a Game</h2>
+    <button onclick="startGame('snake')">Play Snake</button>
+    <button onclick="startGame('tetris')">Play Tetris</button>
+    <button onclick="startGame('breakout')">Play Breakout</button>
+    <button onclick="startGame('flappybird')">Play Flappy Bird</button>
+    <button onclick="startGame('memorycard')">Play Memory Card Game</button>
   </div>
-  <div id="game" style="display: none;">
+
+  <!-- Snake Game -->
+  <div id="snake" class="game-section">
     <h2>Snake Game</h2>
-    <p id="score">Score: 0</p>
-    <div class="grid" id="grid"></div>
+    <p id="snakeScore">Score: 0</p>
+    <div class="grid" id="snakeGrid"></div>
+    <button onclick="returnToMenu()">Return to Menu</button>
   </div>
-  <div class="leaderboard" id="leaderboardMenu">
-    <h3>Best Score: <span id="bestScore">0</span></h3>
+
+  <!-- Tetris Game -->
+  <div id="tetris" class="game-section">
+    <h2>Tetris Game</h2>
+    <canvas id="tetrisCanvas" width="200" height="400"></canvas>
+    <button onclick="returnToMenu()">Return to Menu</button>
   </div>
+
+  <!-- Breakout Game -->
+  <div id="breakout" class="game-section">
+    <h2>Breakout Game</h2>
+    <canvas id="breakoutCanvas" width="400" height="300"></canvas>
+    <button onclick="returnToMenu()">Return to Menu</button>
+  </div>
+
+  <!-- Flappy Bird Game -->
+  <div id="flappybird" class="game-section">
+    <h2>Flappy Bird Game</h2>
+    <canvas id="flappybirdCanvas" width="320" height="480"></canvas>
+    <button onclick="returnToMenu()">Return to Menu</button>
+  </div>
+
+  <!-- Memory Card Game -->
+  <div id="memorycard" class="game-section">
+    <h2>Memory Card Game</h2>
+    <div id="memorycardGrid"></div>
+    <button onclick="returnToMenu()">Return to Menu</button>
+  </div>
+
   <script>
-    const gridSize = 20;
-    let snake = [[10, 10]];
-    let direction = 'RIGHT';
-    let food = [generateFood()];
-    let score = 0;
-    let bestScore = 0;
-    let interval;
-    let paused = false;
+    const menu = document.getElementById('menu');
+    const snakeSection = document.getElementById('snake');
+    const tetrisSection = document.getElementById('tetris');
+    const breakoutSection = document.getElementById('breakout');
+    const flappybirdSection = document.getElementById('flappybird');
+    const memorycardSection = document.getElementById('memorycard');
 
-    const grid = document.getElementById('grid');
-    const scoreDisplay = document.getElementById('score');
-    const home = document.getElementById('home');
-    const game = document.getElementById('game');
-    const startButton = document.getElementById('startButton');
-    const leaderboardMenu = document.getElementById('leaderboardMenu');
-    const bestScoreDisplay = document.getElementById('bestScore');
+    let activeGame = null;
 
-    startButton.addEventListener('click', () => {
-      home.style.display = 'none';
-      game.style.display = 'block';
-      startGame();
-    });
+    function startGame(game) {
+      menu.classList.remove('active');
+      activeGame = game;
 
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowUp' && direction !== 'DOWN') direction = 'UP';
-      if (e.key === 'ArrowDown' && direction !== 'UP') direction = 'DOWN';
-      if (e.key === 'ArrowLeft' && direction !== 'RIGHT') direction = 'LEFT';
-      if (e.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
-    });
-
-    function startGame() {
-      createGrid();
-      updateGrid();
-      clearInterval(interval);
-      interval = setInterval(moveSnake, 200);
-      score = 0;
-      snake = [[10, 10]];
-      direction = 'RIGHT';
-      food = [generateFood()];
-      scoreDisplay.textContent = `Score: ${score}`;
+      if (game === 'snake') {
+        snakeSection.classList.add('active');
+        startSnake();
+      } else if (game === 'tetris') {
+        tetrisSection.classList.add('active');
+        startTetris();
+      } else if (game === 'breakout') {
+        breakoutSection.classList.add('active');
+        startBreakout();
+      } else if (game === 'flappybird') {
+        flappybirdSection.classList.add('active');
+        startFlappyBird();
+      } else if (game === 'memorycard') {
+        memorycardSection.classList.add('active');
+        startMemoryCard();
+      }
     }
 
-    function createGrid() {
+    function returnToMenu() {
+      if (activeGame === 'snake') stopSnake();
+      else if (activeGame === 'tetris') stopTetris();
+      else if (activeGame === 'breakout') stopBreakout();
+      else if (activeGame === 'flappybird') stopFlappyBird();
+      else if (activeGame === 'memorycard') stopMemoryCard();
+
+      snakeSection.classList.remove('active');
+      tetrisSection.classList.remove('active');
+      breakoutSection.classList.remove('active');
+      flappybirdSection.classList.remove('active');
+      memorycardSection.classList.remove('active');
+      menu.classList.add('active');
+    }
+
+    // Snake Game Logic
+    let snake, direction, food, snakeInterval, snakeScore;
+
+    function startSnake() {
+      const grid = document.getElementById('snakeGrid');
       grid.innerHTML = '';
-      for (let i = 0; i < gridSize * gridSize; i++) {
+      for (let i = 0; i < 400; i++) {
         const cell = document.createElement('div');
         cell.classList.add('cell');
         grid.appendChild(cell);
       }
+
+      snake = [[10, 10]];
+      direction = 'RIGHT';
+      food = [Math.floor(Math.random() * 20), Math.floor(Math.random() * 20)];
+      snakeScore = 0;
+      document.getElementById('snakeScore').textContent = `Score: ${snakeScore}`;
+
+      snakeInterval = setInterval(moveSnake, 200);
+      document.addEventListener('keydown', handleSnakeKeyPress);
     }
 
-    function generateFood() {
-      return [Math.floor(Math.random() * gridSize), Math.floor(Math.random() * gridSize)];
-    }
-
-    function updateGrid() {
-      const cells = document.querySelectorAll('.cell');
-      cells.forEach(cell => cell.className = 'cell');
-      snake.forEach(([x, y]) => {
-        const index = x * gridSize + y;
-        cells[index].classList.add('snake');
-      });
-      food.forEach(([x, y]) => {
-        const index = x * gridSize + y;
-        cells[index].classList.add('food');
-      });
+    function handleSnakeKeyPress(e) {
+      if (e.key === 'ArrowUp' && direction !== 'DOWN') direction = 'UP';
+      if (e.key === 'ArrowDown' && direction !== 'UP') direction = 'DOWN';
+      if (e.key === 'ArrowLeft' && direction !== 'RIGHT') direction = 'LEFT';
+      if (e.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
     }
 
     function moveSnake() {
-      if (paused) return;
+      const grid = document.querySelectorAll('#snakeGrid .cell');
+      grid.forEach(cell => cell.className = 'cell');
+      snake.forEach(([x, y]) => grid[x * 20 + y].classList.add('snake'));
 
       const head = [...snake[snake.length - 1]];
       if (direction === 'UP') head[0]--;
@@ -143,42 +188,148 @@
       if (direction === 'LEFT') head[1]--;
       if (direction === 'RIGHT') head[1]++;
 
-      if (
-        head[0] < 0 ||
-        head[1] < 0 ||
-        head[0] >= gridSize ||
-        head[1] >= gridSize ||
-        snake.some(([x, y]) => x === head[0] && y === head[1])
-      ) {
-        gameOver();
-        return;
-      }
-
-      snake.push(head);
-      if (food.some(([fx, fy]) => fx === head[0] && fy === head[1])) {
-        score++;
-        food = [generateFood()];
+      if (head[0] === food[0] && head[1] === food[1]) {
+        snakeScore++;
+        food = [Math.floor(Math.random() * 20), Math.floor(Math.random() * 20)];
       } else {
         snake.shift();
       }
 
-      scoreDisplay.textContent = `Score: ${score}`;
-      updateGrid();
-    }
-
-    function gameOver() {
-      clearInterval(interval);
-      alert(`Game Over! Your score: ${score}`);
-      if (score > bestScore) {
-        bestScore = score;
-        bestScoreDisplay.textContent = bestScore;
+      if (
+        head[0] < 0 || head[1] < 0 || head[0] >= 20 || head[1] >= 20 ||
+        snake.some(([x, y]) => x === head[0] && y === head[1])
+      ) {
+        alert(`Game Over! Score: ${snakeScore}`);
+        returnToMenu();
+        return;
       }
-      resetGame();
+
+      snake.push(head);
+      grid[food[0] * 20 + food[1]].classList.add('food');
+      document.getElementById('snakeScore').textContent = `Score: ${snakeScore}`;
     }
 
-    function resetGame() {
-      home.style.display = 'block';
-      game.style.display = 'none';
+    function stopSnake() {
+      clearInterval(snakeInterval);
+      document.removeEventListener('keydown', handleSnakeKeyPress);
+    }
+
+    // Tetris Game Logic
+    const tetrisCanvas = document.getElementById('tetrisCanvas');
+    const tetrisCtx = tetrisCanvas.getContext('2d');
+    let tetrisInterval, tetrisScore = 0;
+    const tetrisPieces = [
+      [[1, 1, 1, 1]], // I shape
+      [[1, 1], [1, 1]], // O shape
+      [[0, 1, 1], [1, 1, 0]], // S shape
+      [[1, 1, 0], [0, 1, 1]], // Z shape
+      [[1, 1, 1], [0, 1, 0]], // T shape
+      [[1, 1, 0], [1, 0, 0]], // L shape
+      [[0, 1, 1], [0, 0, 1]]  // J shape
+    ];
+
+    function startTetris() {
+      tetrisScore = 0;
+      tetrisCtx.clearRect(0, 0, tetrisCanvas.width, tetrisCanvas.height);
+      tetrisCtx.fillStyle = 'blue';
+      tetrisCtx.fillRect(0, 0, tetrisCanvas.width, tetrisCanvas.height);
+      drawTetrisPiece();
+      tetrisInterval = setInterval(moveTetrisPiece, 500);
+    }
+
+    function moveTetrisPiece() {
+      // Placeholder logic for Tetris movement (for brevity)
+      tetrisCtx.fillStyle = 'red';
+      tetrisCtx.fillRect(50, 50, 50, 50); // Draw block
+    }
+
+    function stopTetris() {
+      clearInterval(tetrisInterval);
+    }
+
+    // Breakout Game Logic
+    const breakoutCanvas = document.getElementById('breakoutCanvas');
+    const breakoutCtx = breakoutCanvas.getContext('2d');
+    let breakoutBall, breakoutPaddle, breakoutInterval;
+
+    function startBreakout() {
+      breakoutBall = { x: 200, y: 150, dx: 4, dy: -4, radius: 10 };
+      breakoutPaddle = { x: 150, width: 100, height: 10 };
+      breakoutInterval = setInterval(moveBreakoutBall, 1000 / 60);
+    }
+
+    function moveBreakoutBall() {
+      breakoutCtx.clearRect(0, 0, breakoutCanvas.width, breakoutCanvas.height);
+      breakoutCtx.beginPath();
+      breakoutCtx.arc(breakoutBall.x, breakoutBall.y, breakoutBall.radius, 0, Math.PI * 2);
+      breakoutCtx.fillStyle = '#0095DD';
+      breakoutCtx.fill();
+      breakoutBall.x += breakoutBall.dx;
+      breakoutBall.y += breakoutBall.dy;
+      if (breakoutBall.x + breakoutBall.radius > breakoutCanvas.width || breakoutBall.x - breakoutBall.radius < 0) breakoutBall.dx = -breakoutBall.dx;
+      if (breakoutBall.y - breakoutBall.radius < 0) breakoutBall.dy = -breakoutBall.dy;
+    }
+
+    function stopBreakout() {
+      clearInterval(breakoutInterval);
+    }
+
+    // Flappy Bird Game Logic
+    const flappybirdCanvas = document.getElementById('flappybirdCanvas');
+    const flappybirdCtx = flappybirdCanvas.getContext('2d');
+    let flappybirdY = 240, flappybirdVelocity = 0, flappybirdGravity = 0.6, flappybirdLift = -15;
+
+    function startFlappyBird() {
+      flappybirdCtx.clearRect(0, 0, flappybirdCanvas.width, flappybirdCanvas.height);
+      flappybirdVelocity += flappybirdGravity;
+      flappybirdY += flappybirdVelocity;
+      flappybirdCtx.beginPath();
+      flappybirdCtx.arc(50, flappybirdY, 20, 0, Math.PI * 2);
+      flappybirdCtx.fillStyle = 'yellow';
+      flappybirdCtx.fill();
+      if (flappybirdY > flappybirdCanvas.height) flappybirdY = 240;
+      requestAnimationFrame(startFlappyBird);
+    }
+
+    function stopFlappyBird() {
+      // Stop Flappy Bird
+    }
+
+    // Memory Card Game Logic
+    const memorycardGrid = document.getElementById('memorycardGrid');
+    let memoryCards, memoryFlipped;
+
+    function startMemoryCard() {
+      memoryCards = [...Array(8).keys(), ...Array(8).keys()].sort(() => Math.random() - 0.5);
+      memoryFlipped = [];
+      memorycardGrid.innerHTML = '';
+      memoryCards.forEach((card, i) => {
+        const cardElement = document.createElement('div');
+        cardElement.classList.add('cell');
+        cardElement.setAttribute('data-card', card);
+        cardElement.addEventListener('click', flipCard);
+        memorycardGrid.appendChild(cardElement);
+      });
+    }
+
+    function flipCard(e) {
+      const card = e.target;
+      card.textContent = card.getAttribute('data-card');
+      memoryFlipped.push(card);
+      if (memoryFlipped.length === 2) {
+        if (memoryFlipped[0].textContent === memoryFlipped[1].textContent) {
+          memoryFlipped = [];
+        } else {
+          setTimeout(() => {
+            memoryFlipped.forEach(card => card.textContent = '');
+            memoryFlipped = [];
+          }, 1000);
+        }
+      }
+    }
+
+    function stopMemoryCard() {
+      // Reset memory card game
     }
   </script>
 </body>
